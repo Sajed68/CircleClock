@@ -1,5 +1,5 @@
 ### پیش‌نیازها:
 > * PyQt5
- * lxml
- * requests
+> * lxml
+> * requests
  
