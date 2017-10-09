@@ -1,7 +1,7 @@
 ### پیش‌نیازها:
 > * PyQt5
 > * lxml
-> * requests
+> * requests  
 ### نصب روی گنو/لینوکس- اوبونتو:
 
 > sudo apt install python-qt5
@@ -20,3 +20,6 @@
 > conda install pillow  
 > pip install lxml  
 > pip install request  
+
+## تذکر مهم:
+ با توجه به این که لیست رویدادها با استفاده از سایت time.ir بروز می‌شود، و این سایت هیچ ضمانتی در پشتیبانی ندارد، لطفا از بروز رسانی پشت سرم هم خودداری نمایید.
