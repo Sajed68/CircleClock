@@ -42,8 +42,8 @@ class ui_widget(QMainWindow):
         self.setWindowTitle('Calendar')
         # following line is a setting to remove icon at taskbar, BUT IT MUST BE QMainWindow:
         self.setWindowFlags(QtCore.Qt.Tool| QtCore.Qt.FramelessWindowHint) # To remove Title bar
-        QToolTip.setFont(QFont('Koodak', 10))
         self.__read_config__()
+        QToolTip.setFont(QFont(self.eventfont, self.eventfontsize))
         self.setAttribute(Qt.WA_NoSystemBackground, True)
         self.setAttribute(Qt.WA_TranslucentBackground, True)
         self.setGeometry(self.x, self.y, 400, 400)
@@ -87,12 +87,12 @@ class ui_widget(QMainWindow):
         # write the date:
         self.qp.setPen(QColor(255, 255, 255))
         self.qp.setBrush(QColor(255, 255, 255))
-        self.qp.setFont(QFont('XP Vosta', 20)) # XP Vosta #
+        self.qp.setFont(QFont(self.datefont, self.datefontsize)) # XP Vosta #
         self.qp.drawText(175 - 75, 180, 150, 75, Qt.AlignCenter, self.persian_date)
         
         self.qp.setPen(QColor(255, 255, 255))
         self.qp.setBrush(QColor(255, 255, 255))
-        self.qp.setFont(QFont('Koodak', 34)) #
+        self.qp.setFont(QFont(self.clockfont, self.clockfontsize)) #
         self.qp.drawText(175 - 85, 130, 171, 35, Qt.AlignCenter, self.persian_time)
         
         self.qp.drawRect(100, 175, 150, 1)
@@ -261,10 +261,24 @@ class ui_widget(QMainWindow):
                 else:
                     self.x = 1900-400
                     self.y = 1000-400
+                self.clockfont = self.config['clockfont']
+                self.clockfontsize = self.config['clockfontsize']
+                self.datefont = self.config['datefont']
+                self.datefontsize = self.config['datefontsize']
+                self.eventfont = self.config['eventfont']
+                self.eventfontsize = self.config['eventfontsize']
+                print('config file loaded')
         except:
-            self.config = {{"x":1900-400}, {"y":1000-400}, {"open":"default"}}
+            self.config = {"y": 560, "x": 1520, "open": "last", "clockfont": "Koodak", "datefont":"XP Vosta", "clockfontsize":34, "datefontsize":20, "eventfont":"Koodak", "eventfontsize":15}
             self.x = self.config['x']
             self.y = self.config['y']
+            self.clockfont = self.config['clockfont']
+            self.clockfontsize = self.config['clockfontsize']
+            self.datefont = self.config['datefont']
+            self.datefontsize = self.config['datefontsize']
+            self.eventfont = self.config['eventfont']
+            self.eventfontsize = self.config['eventfontsize']
+            print("config can't loaded")
         try:
             with open('config.json', 'w') as outfile:
                 json.dump(self.config, outfile)
