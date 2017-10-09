@@ -35,6 +35,8 @@ import json
 import requests # to update envents from times.ir
 from lxml import html
 import time
+import codecs
+
 
 class ui_widget(QMainWindow):
     def __init__(self):
@@ -248,7 +250,7 @@ class ui_widget(QMainWindow):
     
     def __read_config__(self):
         try: 
-            with open('events.json', 'r') as events:
+            with codecs.open('events.json', 'r', 'utf-8-sig') as events : # open('events.json', 'r') as events:
                 self.events = json.load(events)
         except:
             print("I can't load events file :(")
