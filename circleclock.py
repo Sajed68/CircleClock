@@ -16,24 +16,25 @@
 # Author: Sajed Rakhshani
 # Start: 13 Mehr 1396
 # First Release 13 Mehr 1396
-# Url : https://gitlab.com/sajed68/circle-clock-widget
 # #####################################################
 
 
 # the libraries for ui menu:
 from PyQt5.QtWidgets import QApplication, QWidget, QToolTip, QPushButton, QMessageBox, QMainWindow, QMenu, qApp
-from PyQt5.QtGui import QFont, QPainter, QColor, QPolygonF, QImage, QTransform
+from PyQt5.QtGui import QFont, QPainter, QColor, QPolygonF, QImage, QTransform, QPen
 from PyQt5.QtCore import QCoreApplication
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt, QPointF
 import math
 from PIL import Image, ImageQt
-import sys
 from PyQt5.QtCore import QDateTime, QDate, QTimer # because I want get away from time for calculation the time!
+import sys
 sys.path.append('./utils')
 import jdatetime  # use side library to convert date
 import json
-
+import requests # to update envents from times.ir
+from lxml import html
+import time
 
 class ui_widget(QMainWindow):
     def __init__(self):
@@ -93,6 +94,15 @@ class ui_widget(QMainWindow):
         self.qp.setBrush(QColor(255, 255, 255))
         self.qp.setFont(QFont('Koodak', 34)) #
         self.qp.drawText(175 - 85, 130, 171, 35, Qt.AlignCenter, self.persian_time)
+        
+        self.qp.drawRect(100, 175, 150, 1)
+        pen = QPen()
+        pen.setWidth(10)
+        #pen.setColor( QColor(255,255,255))
+        #self.qp.setPen(pen)
+        #self.qp.setPen(pen)
+        #self.qp.setBrush(Qt.white)
+        #self.qp.drawArc(5, 0.0, 350.0, 350.0, -0*16, -180*16)
 
                 
         
@@ -109,15 +119,22 @@ class ui_widget(QMainWindow):
         for i in range(0, 60, 1):
             poly = QPolygonF()
             a = (i+1) * math.pi  / 30
-            if i != ps:
+            if True: #i != ps:
                 self.qp.setBrush(Qt.white)
-                c, v = self.__rotate_the_points(a, 1, -110)
+                self.qp.setPen(Qt.white)
+                c, v = self.__rotate_the_points__(a, 1, -110)
                 self.qp.drawEllipse(x1 - c - 3, y1 - v - 3, 6, 6)
-            #if i == ps:
-                #self.qp.setBrush(Qt.red)
-                #self.qp.drawEllipse(x1 - c - 3, y1 - v - 3, 6, 6)
+            if i == ps:
+                col = QColor(178,34,34)
+                self.qp.setBrush(col)
+                self.qp.setPen(col)
+                #self.qp.setOpacity(0.0)
+                c, v = self.__rotate_the_points__(a, 1, -110)
+                self.qp.drawEllipse(x1 - c - 4, y1 - v - 4, 8, 8)
+                #self.qp.setOpacity(1.0)
+                
         
-    def __rotate_the_points(self, a, x, y):
+    def __rotate_the_points__(self, a, x, y):
         xr = y * math.cos(a) + x * math.sin(-a)
         yr = -y * math.sin(-a) + x * math.cos(a)
         return xr, yr
@@ -231,7 +248,7 @@ class ui_widget(QMainWindow):
     
     def __read_config__(self):
         try: 
-            with open('./utils/events.json', 'r') as events:
+            with open('events.json', 'r') as events:
                 self.events = json.load(events)
         except:
             print("I can't load events file :(")
@@ -281,10 +298,66 @@ class ui_widget(QMainWindow):
            cmenu = QMenu(self)
 
            quitAct = cmenu.addAction("بسته شم؟")
+           updateevent = cmenu.addAction("رویدادها رو بروز کنم؟ (اینترنت میخواهم!)")
            action = cmenu.exec_(self.mapToGlobal(event.pos()))
+
            
            if action == quitAct:
                self.close()
+           if action == updateevent:
+               print ("I'm updataing myself by times.ir...")
+               year = self.persian_date.split(' ')[-1]
+               dic = {u'۰':'0', u'۱':'1', u'۲':'2', u'۳':'3', u'۴':'4', u'۵':'5', u'۶':'6', u'۷':'7', u'۸':'8', u'۹':'9'}
+               day = u'۰۱۲۳۴۵۶۷۸۹'
+               year = u''.join([dic.get(i) for i in year])
+               print ("year = ", year)
+               m = [31] * 6 + [30] * 5 + [29]
+               month_dict = {1:u'فروردین',
+                      2:u'اردیبهشت',
+                      3:u'خرداد',
+                      4:u'تیر',
+                      5:u'مرداد',
+                      6:u'شهریور',
+                      7:u'مهر',
+                      8:u'آبان',
+                      9:u'آذر',
+                      10:u'دی',
+                      11:u'بهمن',
+                      12:u'اسفند',
+            }
+               EV = open('events.json', 'w')
+               EV.writelines('{')
+               for i in range(1, 13):
+                   for j in range(1, m[i-1]+1):
+                       url = 'http://www.time.ir/fa/event/list/0/'+year+'/'+str(i)+'/'+ str(j)
+                       page = requests.get(url)
+                       tree = html.fromstring(page.content)
+                       tt = tree.xpath('//li/text()')
+                       if len(tt) == 0:
+                           pass
+                       else:
+                           a = [tt[k] for k in range(len(tt)) if k % 3 == 1]
+                           b = [c.split('\r\n')[1] for c in a]
+                           for c in range(len(b)):
+                               for k in range(len(b[c])):
+                                   if  b[c][k] != u' ' or b[c][k] != ' ':
+                                       break
+                                       print("I break it")
+                               b[c] = b[c][k::]
+                           text = ''
+                           for t in b:
+                               text = text + t + '-'
+                               d = u''.join([day[int(l)] for l in str(j)])
+                           line = u'"' + d + u' ' + month_dict[i]+u'": '+ u'"'+text+'",\n'
+                           if sys.version[0] == '2':
+                               line = line.encode('utf-8')
+                           EV.writelines(line)
+                           print (text)
+                       time.sleep(0.5)
+                
+               EV.writelines('"پایان":"پایان"')
+               EV.writelines("}")
+               EV.close()
         
         
 if __name__ == '__main__':
