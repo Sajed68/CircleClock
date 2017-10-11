@@ -2,6 +2,8 @@
 > * PyQt5
 > * lxml
 > * requests  
+
+
 ### نصب روی گنو/لینوکس- اوبونتو:
 
 > sudo apt install python-qt5  
