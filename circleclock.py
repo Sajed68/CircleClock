@@ -20,7 +20,7 @@
 
 
 # the libraries for ui menu:
-from PyQt5.QtWidgets import QApplication, QWidget, QToolTip, QPushButton, QMessageBox, QMainWindow, QMenu, qApp
+from PyQt5.QtWidgets import QApplication, QWidget, QToolTip, QPushButton, QMessageBox, QMainWindow, QMenu, qApp, QTableWidget,QTableWidgetItem,QVBoxLayout, QLabel
 from PyQt5.QtGui import QFont, QPainter, QColor, QPolygonF, QImage, QTransform, QPen
 from PyQt5.QtCore import QCoreApplication
 from PyQt5 import QtCore
@@ -62,6 +62,8 @@ class ui_widget(QMainWindow):
         self.timer.timeout.connect(self.animate)
         self.timer.start(500)
         self.clockwork = ':'
+        self.cal = cal(self.events)
+        self.cal.hide()
         self.__update__()
 
         # now need to call shower method!
@@ -195,8 +197,8 @@ class ui_widget(QMainWindow):
         day_dict = {0:u'یکشنبه',
                     1:u'دوشنبه',
                     2:u'سه شنبه',
-                    3:u'چهار شنبه',
-                    4:u'پنج شنبه',
+                    3:u'چهارشنبه',
+                    4:u'پنجشنبه',
                     5:u'جمعه',
                     6:u'شنبه',
                     7:u'یکشنبه'}
@@ -297,6 +299,13 @@ class ui_widget(QMainWindow):
             with open('config.json', 'w') as outfile:
                 json.dump(self.config, outfile)
         
+        
+        
+    def __cal_show__(self):
+        self.cal.get_date(self.jdate+[self.persian_date])
+        self.cal.show()
+        print ('pass')
+            
             
             
     def __un_round__(self,n):
@@ -314,12 +323,15 @@ class ui_widget(QMainWindow):
            cmenu = QMenu(self)
 
            quitAct = cmenu.addAction("بسته شم؟")
+           event_cal = cmenu.addAction("نمایش تقویم")
            updateevent = cmenu.addAction("رویدادها رو بروز کنم؟ (اینترنت میخواهم!)")
            action = cmenu.exec_(self.mapToGlobal(event.pos()))
 
            
            if action == quitAct:
                self.close()
+           if action == event_cal:
+               self.__cal_show__()
            if action == updateevent:
                print ("I'm updataing myself by times.ir...")
                year = self.persian_date.split(' ')[-1]
@@ -375,7 +387,121 @@ class ui_widget(QMainWindow):
                EV.writelines("}")
                EV.close()
         
+ 
+class cal(QWidget):
+    def __init__(self, ev):
+        super(cal, self).__init__()
+        self.setWindowTitle('Calendar_veiw')
+        self.setGeometry(500, 500, 400, 400)
+        self.setMinimumWidth(725)
+        self.setMinimumHeight(400)
+        self.setMaximumWidth(725)
+        #self.setMaximumHeight(400)
+        self.events = ev
+        self.tableWidget = QTableWidget()
+        self.label = QLabel("text")
+        self.createTable(1, 1, 1, 1)
+        self.layout = QVBoxLayout()
+        self.text = ' '
+        self.layout.addWidget(self.tableWidget) 
+        self.layout.addWidget(self.label)         
+        self.setLayout(self.layout) 
+        self.month_dict = {1:u'فروردین',
+                      2:u'اردیبهشت',
+                      3:u'خرداد',
+                      4:u'تیر',
+                      5:u'مرداد',
+                      6:u'شهریور',
+                      7:u'مهر',
+                      8:u'آبان',
+                      9:u'آذر',
+                      10:u'دی',
+                      11:u'بهمن',
+                      12:u'اسفند',
+            }
+        self.month_idx = 1
         
+        self.show()
+        
+    def get_date(self, date):
+        print (date)
+        day = date[2]
+        month = date[1]
+        self.month_idx = month
+        year = date[0]
+        per_day = date[3].split('\n')[0]
+        days = [u"شنبه", u"یکشنبه",u"دوشنبه", u"سه شنبه", u"چهارشنبه", u"پنجشنبه", u"جمعه"]
+        day_idx = days.index(per_day)
+        full_week = day + (6-day_idx)
+        firstday_idx = 7 - full_week % 7
+        self.tableWidget.clear()
+        self.createTable(firstday_idx, month, day, year)
+        self.on_click()
+        self.show_text()
+        #self.layout.addWidget(self.tableWidget) 
+    
+    def get_events(self):
+        pass
+    
+    
+    def createTable(self, firstday_idx, month, day, year):
+       # Create table
+        self.tableWidget.setRowCount(7)
+        self.tableWidget.setColumnCount(7)
+        self.tableWidget.setStyleSheet("QTableView {selection-background-color: red}")
+        self.tableWidget.verticalHeader().setVisible(False)
+        self.tableWidget.horizontalHeader().setVisible(False)
+        days = [u"شنبه", u"یکشنبه",u"دوشنبه", u"سه شنبه", u"چهارشنبه", u"پنجشنبه", u"جمعه"]
+        for i in range(7):
+            self.tableWidget.setItem(0,i, QTableWidgetItem(days[i]))
+            #self.text = self.events.get(day_month, None)
+            #self.on_click()
+        day_num = 31 if month <= 6 else 30
+        if month == 12:
+            day_num = 30 if year % 4 == 1 else 29
+        for i in range(day_num):
+            j = i + firstday_idx
+            x = j / 7
+            y = j % 7
+            self.tableWidget.setItem(x+1,y, self.create_per_num(i+1))
+            if j-1 == day:
+                self.tableWidget.setCurrentCell(x+1,y)
+        self.tableWidget.move(0,0)
+        self.tableWidget.cellClicked.connect(self.on_click)
+        
+        
+    def on_click(self):
+        try:
+            day = self.tableWidget.currentItem().text()
+            day_month = day + ' ' + self.month_dict[self.month_idx]
+        except:
+            day_month = '___'
+        self.text = self.events.get(day_month, ' ')
+        self.show_text()
+        
+        
+    def show_text(self):
+        self.label.setText(self.text)
+        
+            
+            
+    def create_per_num(self, num):
+        d = u'۰۱۲۳۴۵۶۷۸۹'
+        x = int(num / 10)
+        y = num % 10
+        r = d[x]+d[y] if x > 0 else d[y]
+        item = QTableWidgetItem()
+        item.setText(r)
+        item.setFlags(QtCore.Qt.ItemIsEnabled)
+        return item
+        
+    def closeEvent(self, event):
+        #self.tableWidget.clear()
+        self.hide()
+        event.ignore()
+ 
+
+
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     w = ui_widget()
