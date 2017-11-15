@@ -62,7 +62,7 @@ class ui_widget(QMainWindow):
         self.timer.timeout.connect(self.animate)
         self.timer.start(500)
         self.clockwork = ':'
-        self.cal = cal(self.events)
+        self.cal = cal(self.events, self.holidays)
         self.cal.hide()
         self.__update__()
 
@@ -254,6 +254,8 @@ class ui_widget(QMainWindow):
         try: 
             with codecs.open('events.json', 'r', 'utf-8-sig') as events : # open('events.json', 'r') as events:
                 self.events = json.load(events)
+            with codecs.open('holidays.json', 'r', 'utf-8-sig') as holidays : 
+                self.holidays = json.load(holidays)
         except:
             print("I can't load events file :(")
         try:
@@ -354,11 +356,14 @@ class ui_widget(QMainWindow):
                       12:u'اسفند',
             }
                EV = open('events.json', 'w')
-               EV.writelines('{')
+               HD = open('holidays.json', 'w')
+               EV.writelines('{\n')
+               HD.writelines('{\n')
                for i in range(1, 13):
                    for j in range(1, m[i-1]+1):
                        url = 'http://www.time.ir/fa/event/list/0/'+year+'/'+str(i)+'/'+ str(j)
                        page = requests.get(url)
+                       holiday = 0 if page.content.find(b'eventHoliday') == -1 else 1
                        tree = html.fromstring(page.content)
                        tt = tree.xpath('//li/text()')
                        if len(tt) == 0:
@@ -376,7 +381,15 @@ class ui_widget(QMainWindow):
                            for t in b:
                                text = text + t + '-'
                                d = u''.join([day[int(l)] for l in str(j)])
-                           line = u'"' + d + u' ' + month_dict[i]+u'": '+ u'"'+text+'",\n'
+                           holitext = u' (تعطیل)' if holiday == 1 else u''
+                           line = u'"' + d + u' ' + month_dict[i]+u'": '+ u'"'+text+holitext+'",\n'
+                           if holiday == 1:
+                               #L = u'"' + u' ' + month_dict[i]+u'": '+ u'"'+d+'",\n'
+                               L = u'"'+ d + u' ' + month_dict[i]+u'": '+ u'"'+d+'",\n'
+                               if sys.version[0] == '2':
+                                   L = L.encode('utf-8')
+                               HD.writelines(L)
+                               
                            if sys.version[0] == '2':
                                line = line.encode('utf-8')
                            EV.writelines(line)
@@ -386,26 +399,14 @@ class ui_widget(QMainWindow):
                EV.writelines('"پایان":"پایان"')
                EV.writelines("}")
                EV.close()
-        
+               HD.writelines('"پایان":"پایان"')
+               HD.writelines("}")
+               HD.close()
+
  
 class cal(QWidget):
-    def __init__(self, ev):
+    def __init__(self, ev, hd):
         super(cal, self).__init__()
-        self.setWindowTitle('Calendar_veiw')
-        self.setGeometry(500, 500, 400, 400)
-        self.setMinimumWidth(725)
-        self.setMinimumHeight(400)
-        self.setMaximumWidth(725)
-        #self.setMaximumHeight(400)
-        self.events = ev
-        self.tableWidget = QTableWidget() # Calendar table view
-        self.next_monthB = QPushButton(u'ماه بعد')  # Next month button
-        self.prev_monthB = QPushButton(u'ماه قبل')  # prev month button
-        self.next_monthB.clicked.connect(self.go_next_month)
-        self.prev_monthB.clicked.connect(self.go_prev_month)
-        self.label = QLabel("text") # event showr!
-        self.createTable(0,0,0,0)
-        self.text = ' '
         self.month_dict = {1:u'فروردین',
                       2:u'اردیبهشت',
                       3:u'خرداد',
@@ -419,6 +420,23 @@ class cal(QWidget):
                       11:u'بهمن',
                       12:u'اسفند',
             }
+        self.setWindowTitle('Calendar_veiw')
+        self.setGeometry(500, 500, 400, 400)
+        self.setMinimumWidth(725)
+        self.setMinimumHeight(400)
+        self.setMaximumWidth(725)
+        #self.setMaximumHeight(400)
+        self.events = ev
+        self.holidays = hd
+        self.tableWidget = QTableWidget() # Calendar table view
+        self.next_monthB = QPushButton(u'ماه بعد')  # Next month button
+        self.prev_monthB = QPushButton(u'ماه قبل')  # prev month button
+        self.next_monthB.clicked.connect(self.go_next_month)
+        self.prev_monthB.clicked.connect(self.go_prev_month)
+        self.label = QLabel("text") # event showr!
+        
+        self.createTable(1,1,1,1)
+        self.text = ' '
         self.month_idx = 1
         self.month_name = self.month_dict[self.month_idx]
         self.month_label = QLabel(self.month_name) # month showr!
@@ -465,8 +483,7 @@ class cal(QWidget):
         days = [u"شنبه", u"یکشنبه",u"دوشنبه", u"سه شنبه", u"چهارشنبه", u"پنجشنبه", u"جمعه"]
         for i in range(7):
             self.tableWidget.setItem(0,i, QTableWidgetItem(days[i]))
-            #self.text = self.events.get(day_month, None)
-            #self.on_click()
+    
         day_num = 31 if month <= 6 else 30
         if month == 12:
             day_num = 30 if year % 4 == 1 else 29
@@ -474,9 +491,15 @@ class cal(QWidget):
             j = i + firstday_idx
             x = j / 7
             y = j % 7
-            self.tableWidget.setItem(x+1,y, self.create_per_num(i+1))
+            item, num_text = self.create_per_num(i+1)
+            #print(num_text + u' ' + self.month_dict[month])
+            if self.holidays.get(num_text + u' ' + self.month_dict[month], None) is not None:
+                item.setBackground(QColor(250,100,100))
+            self.tableWidget.setItem(x+1,y, item)
             if j-1 == day:
                 self.tableWidget.setCurrentCell(x+1,y)
+            if y%7 == 6:
+                self.tableWidget.item(x+1, y).setBackground(QColor(250,100,100))
         self.tableWidget.move(0,0)
         self.tableWidget.cellClicked.connect(self.on_click)
         
@@ -565,7 +588,7 @@ class cal(QWidget):
         item = QTableWidgetItem()
         item.setText(r)
         item.setFlags(QtCore.Qt.ItemIsEnabled)
-        return item
+        return item, r
         
     def closeEvent(self, event):
         #self.tableWidget.clear()
