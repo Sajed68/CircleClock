@@ -14,8 +14,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 # Author: Sajed Rakhshani
+# Email : SajedRakhshani@msn.com
 # Start: 13 Mehr 1396
 # First Release 13 Mehr 1396
+# 3th Release 24 Aban
 # #####################################################
 
 
