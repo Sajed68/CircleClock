@@ -20,7 +20,7 @@
 
 
 # the libraries for ui menu:
-from PyQt5.QtWidgets import QApplication, QWidget, QToolTip, QPushButton, QMessageBox, QMainWindow, QMenu, qApp, QTableWidget,QTableWidgetItem,QVBoxLayout, QLabel
+from PyQt5.QtWidgets import QApplication, QWidget, QToolTip, QPushButton, QMessageBox, QMainWindow, QMenu, qApp, QTableWidget,QTableWidgetItem,QVBoxLayout, QLabel, QGridLayout
 from PyQt5.QtGui import QFont, QPainter, QColor, QPolygonF, QImage, QTransform, QPen
 from PyQt5.QtCore import QCoreApplication
 from PyQt5 import QtCore
@@ -398,14 +398,14 @@ class cal(QWidget):
         self.setMaximumWidth(725)
         #self.setMaximumHeight(400)
         self.events = ev
-        self.tableWidget = QTableWidget()
-        self.label = QLabel("text")
-        self.createTable(1, 1, 1, 1)
-        self.layout = QVBoxLayout()
+        self.tableWidget = QTableWidget() # Calendar table view
+        self.next_monthB = QPushButton(u'ماه بعد')  # Next month button
+        self.prev_monthB = QPushButton(u'ماه قبل')  # prev month button
+        self.next_monthB.clicked.connect(self.go_next_month)
+        self.prev_monthB.clicked.connect(self.go_prev_month)
+        self.label = QLabel("text") # event showr!
+        self.createTable(0,0,0,0)
         self.text = ' '
-        self.layout.addWidget(self.tableWidget) 
-        self.layout.addWidget(self.label)         
-        self.setLayout(self.layout) 
         self.month_dict = {1:u'فروردین',
                       2:u'اردیبهشت',
                       3:u'خرداد',
@@ -420,11 +420,21 @@ class cal(QWidget):
                       12:u'اسفند',
             }
         self.month_idx = 1
+        self.month_name = self.month_dict[self.month_idx]
+        self.month_label = QLabel(self.month_name) # month showr!
+        self.layout = QGridLayout()
+        self.layout.addWidget(self.month_label, 0, 0, 1, 2) 
+        self.layout.addWidget(self.tableWidget, 1, 0, 1, 2) 
+        self.layout.addWidget(self.next_monthB, 2, 0, 1, 1) 
+        self.layout.addWidget(self.prev_monthB, 2, 1, 1, 1) 
+        self.layout.addWidget(self.label, 3, 0, 1, 2)         
+        self.setLayout(self.layout) 
         
         self.show()
         
     def get_date(self, date):
         print (date)
+        self.date = date
         day = date[2]
         month = date[1]
         self.month_idx = month
@@ -438,7 +448,8 @@ class cal(QWidget):
         self.createTable(firstday_idx, month, day, year)
         self.on_click()
         self.show_text()
-        #self.layout.addWidget(self.tableWidget) 
+        self.show_month()
+
     
     def get_events(self):
         pass
@@ -483,6 +494,67 @@ class cal(QWidget):
     def show_text(self):
         self.label.setText(self.text)
         
+    def show_month(self):
+        self.month_name = self.month_dict[self.month_idx]
+        self.month_label.setText(self.month_name)
+        
+    
+    def go_next_month(self):
+        if self.month_idx < 12:
+            month = self.month_idx
+            self.month_idx = self.month_idx % 12 + 1
+            #print(self.date)
+            self.date[1] = self.month_idx
+            day = self.date[2]
+            year = self.date[0]
+            per_day, other_parts = self.date[3].split('\n')
+            days = [u"شنبه", u"یکشنبه",u"دوشنبه", u"سه شنبه", u"چهارشنبه", u"پنجشنبه", u"جمعه"]
+            day_idx = days.index(per_day)
+            day_num = 31 if month <= 6 else 30
+            if month == 12:
+                day_num = 30 if year % 4 == 1 else 29
+            day_on_next = day + (day_num-day) +day_idx
+            last_day = days[day_on_next % 7]
+            d,m,y = other_parts.split(' ')
+            m = self.month_dict[self.month_idx]
+            other_parts = d + ' ' + m + ' ' + y
+            self.date[3] = last_day+'\n'+other_parts
+            self.get_date(self.date)
+            self.show_month()
+        else:
+            pass
+        
+    def go_prev_month(self):
+        if self.month_idx > 1:
+            month = self.month_idx
+            self.month_idx -= 1
+            if self.month_idx == 0 : self.month_idx == 12
+            print(self.date)
+            self.date[1] = self.month_idx
+            day = self.date[2]
+            year = self.date[0]
+            per_day, other_parts = self.date[3].split('\n')
+            days = [u"شنبه", u"یکشنبه",u"دوشنبه", u"سه شنبه", u"چهارشنبه", u"پنجشنبه", u"جمعه"]
+            day_idx = days.index(per_day)
+            day_num = 31 if month-1 <= 6 else 30
+            if month == 1:
+                day_num = 30 if year % 4 == 1 else 29
+            full_week = day + (6-day_idx)
+            firstday_idx = 7 - full_week % 7
+            last_day_of_prev = firstday_idx - 1 if firstday_idx != 0 else 6
+            print(days[last_day_of_prev])
+            diff_day = day_num - day
+            #last_day = days[(diff_day%7 + last_day_of_prev)%7]
+            last_day = days[last_day_of_prev]
+            self.date[2] = day_num
+            d,m,y = other_parts.split(' ')
+            m = self.month_dict[self.month_idx]
+            other_parts = d + ' ' + m + ' ' + y
+            self.date[3] = last_day+'\n'+other_parts
+            self.get_date(self.date)
+            self.show_month()
+        else:
+            pass
             
             
     def create_per_num(self, num):
