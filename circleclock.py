@@ -14,15 +14,18 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 # Author: Sajed Rakhshani
-# Email : SajedRakhshani@msn.com
+# E-mail: SajedRakhshani@msn.com
+# gitlab: https://gitlab.com/sajed68/circle-clock-widget
 # Start: 13 Mehr 1396
 # First Release 13 Mehr 1396
-# 3th Release 24 Aban
+# Third Release 24 Aban 1396
+# version 2.0
+# Release date: 25 Aban
 # #####################################################
 
 
 # the libraries for ui menu:
-from PyQt5.QtWidgets import QApplication, QWidget, QToolTip, QPushButton, QMessageBox, QMainWindow, QMenu, qApp, QTableWidget,QTableWidgetItem,QVBoxLayout, QLabel, QGridLayout
+from PyQt5.QtWidgets import QApplication, QWidget, QToolTip, QPushButton, QMessageBox, QMainWindow, QMenu, qApp, QTableWidget,QTableWidgetItem,QVBoxLayout, QLabel, QGridLayout, QLineEdit
 from PyQt5.QtGui import QFont, QPainter, QColor, QPolygonF, QImage, QTransform, QPen
 from PyQt5.QtCore import QCoreApplication
 from PyQt5 import QtCore
@@ -64,7 +67,7 @@ class ui_widget(QMainWindow):
         self.timer.timeout.connect(self.animate)
         self.timer.start(500)
         self.clockwork = ':'
-        self.cal = cal(self.events, self.holidays)
+        self.cal = cal(self.events, self.holidays, self.myevents)
         self.cal.hide()
         self.__update__()
 
@@ -227,8 +230,11 @@ class ui_widget(QMainWindow):
         event = event.split('\n')[1]
         event = event.split(' ')
         event = event[0] + ' ' + event[1]
+        myevent = self.myevents.get(event, u'')
+        myevent = u'' if myevent == u'' else '\n یادآور: '+myevent
         self.event_text = self.events.get(event, None) 
-        self.event_text = self.event_text if self.event_text is not None else 'امروز اتفاق خاصی نیفتاده!\nافتاده؟ پس اضافه کن!(متاسفانه فعلا امکانش نیست)'
+        self.event_text = self.event_text if self.event_text is not None else 'امروز اتفاق خاصی نیفتاده!)'
+        self.event_text += myevent
         self.setToolTip(self.event_text)
         
     def animate(self):
@@ -292,6 +298,15 @@ class ui_widget(QMainWindow):
                 json.dump(self.config, outfile)
         except:
                 pass
+            
+        try:
+            with codecs.open('myevents.json', 'r', 'utf-8-sig') as reminder : 
+                self.myevents = json.load(reminder)
+        except:
+            self.myevents = {}
+            print('there is no reminder, so I created new one!')
+            with open('myevents.json', 'w') as outfile:
+                json.dump(self.myevents, outfile)
     
     def __write_config__(self):
         pos = self.pos()
@@ -405,9 +420,10 @@ class ui_widget(QMainWindow):
                HD.writelines("}")
                HD.close()
 
- 
+
+# ##########################################################################################################################################################Section II 
 class cal(QWidget):
-    def __init__(self, ev, hd):
+    def __init__(self, ev, hd, mev):
         super(cal, self).__init__()
         self.month_dict = {1:u'فروردین',
                       2:u'اردیبهشت',
@@ -425,16 +441,21 @@ class cal(QWidget):
         self.setWindowTitle('Calendar_veiw')
         self.setGeometry(500, 500, 400, 400)
         self.setMinimumWidth(725)
-        self.setMinimumHeight(400)
+        self.setMinimumHeight(450)
         self.setMaximumWidth(725)
-        #self.setMaximumHeight(400)
+        self.setMaximumHeight(450)
         self.events = ev
         self.holidays = hd
+        self.myevents = mev
         self.tableWidget = QTableWidget() # Calendar table view
         self.next_monthB = QPushButton(u'ماه بعد')  # Next month button
         self.prev_monthB = QPushButton(u'ماه قبل')  # prev month button
         self.next_monthB.clicked.connect(self.go_next_month)
         self.prev_monthB.clicked.connect(self.go_prev_month)
+        self.reminderB = QPushButton(u'یادآور')  # Add self events
+        self.reminderB.clicked.connect(self.reminder_submit)
+        self.reminderL = QLabel("۱۲ شهریور")
+        self.reminderE = QLineEdit()
         self.label = QLabel("text") # event showr!
         
         self.createTable(1,1,1,1)
@@ -443,13 +464,17 @@ class cal(QWidget):
         self.month_name = self.month_dict[self.month_idx]
         self.month_label = QLabel(self.month_name) # month showr!
         self.layout = QGridLayout()
-        self.layout.addWidget(self.month_label, 0, 0, 1, 2) 
-        self.layout.addWidget(self.tableWidget, 1, 0, 1, 2) 
-        self.layout.addWidget(self.next_monthB, 2, 0, 1, 1) 
-        self.layout.addWidget(self.prev_monthB, 2, 1, 1, 1) 
-        self.layout.addWidget(self.label, 3, 0, 1, 2)         
         self.setLayout(self.layout) 
         
+        self.layout.addWidget(self.month_label, 0, 0, 1, 1) 
+        self.layout.addWidget(self.tableWidget, 1, 0, 1, -1) 
+        self.layout.addWidget(self.reminderB, 2, 0, 1, 1)
+        self.layout.addWidget(self.reminderL, 2, 1, 1, 1)
+        self.layout.addWidget(self.reminderE, 2, 2, 1, 4)
+        self.layout.addWidget(self.next_monthB, 3, 0, 1, 3) 
+        self.layout.addWidget(self.prev_monthB, 3, 3, 1, 3) 
+        self.layout.addWidget(self.label, 4, 0, 1, -1)  
+
         self.show()
         
     def get_date(self, date):
@@ -476,15 +501,23 @@ class cal(QWidget):
     
     
     def createTable(self, firstday_idx, month, day, year):
-       # Create table
+        # Create table
         self.tableWidget.setRowCount(7)
         self.tableWidget.setColumnCount(7)
         self.tableWidget.setStyleSheet("QTableView {selection-background-color: red}")
         self.tableWidget.verticalHeader().setVisible(False)
         self.tableWidget.horizontalHeader().setVisible(False)
+        self.tableWidget.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.tableWidget.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        for x in range(0,7):
+            for y in range(0,7):
+                self.tableWidget.setItem(x,y, QTableWidgetItem(u''))
+                self.tableWidget.item(x,y).setFlags(QtCore.Qt.ItemIsEnabled)
         days = [u"شنبه", u"یکشنبه",u"دوشنبه", u"سه شنبه", u"چهارشنبه", u"پنجشنبه", u"جمعه"]
         for i in range(7):
             self.tableWidget.setItem(0,i, QTableWidgetItem(days[i]))
+            self.tableWidget.item(0, i).setBackground(QColor(100,150,250, 255))
+            self.tableWidget.item(0, i).setFlags(QtCore.Qt.ItemIsEnabled)
     
         day_num = 31 if month <= 6 else 30
         if month == 12:
@@ -497,6 +530,10 @@ class cal(QWidget):
             #print(num_text + u' ' + self.month_dict[month])
             if self.holidays.get(num_text + u' ' + self.month_dict[month], None) is not None:
                 item.setBackground(QColor(250,100,100))
+            elif self.myevents.get(num_text + u' ' + self.month_dict[month], None) is not None:
+                item.setBackground(QColor(100,250,100))
+            else:
+                item.setBackground(QColor(100,150,150, 100))
             self.tableWidget.setItem(x+1,y, item)
             if j-1 == day:
                 self.tableWidget.setCurrentCell(x+1,y)
@@ -504,24 +541,62 @@ class cal(QWidget):
                 self.tableWidget.item(x+1, y).setBackground(QColor(250,100,100))
         self.tableWidget.move(0,0)
         self.tableWidget.cellClicked.connect(self.on_click)
+        for i in range(7):
+            self.tableWidget.setColumnWidth(i, 100)
         
         
     def on_click(self):
+        myevent = ' '
         try:
             day = self.tableWidget.currentItem().text()
             day_month = day + ' ' + self.month_dict[self.month_idx]
+            myevent = self.myevents.get(day_month, ' ')
+            if day != '':
+                self.reminderL.setText(day_month)
+                self.reminderB.setEnabled(True)
+                self.reminderE.setEnabled(True)
+            else:
+                self.reminderL.setText(u'یک روز را انتخاب کن')
+                self.reminderB.setEnabled(False)
+                self.reminderE.setEnabled(False)
         except:
             day_month = '___'
-        self.text = self.events.get(day_month, ' ')
+        a = '\n' + u'یادآور: ' + myevent
+        myevent = ' ' if myevent == ' ' else a
+        self.text = self.events.get(day_month, ' ') + myevent
+        print (myevent)
         self.show_text()
         
         
     def show_text(self):
         self.label.setText(self.text)
+        self.label.setWordWrap(True)
+        #self.label.setAlignment(Qt.AlignLeft)
         
     def show_month(self):
         self.month_name = self.month_dict[self.month_idx]
         self.month_label.setText(self.month_name)
+        
+        
+    def reminder_submit(self):
+        print(self.myevents)
+        text = self.reminderE.text()
+        day_month = self.reminderL.text()
+        my_prev_envent  = self.myevents.get(day_month, None)
+        if text == '':
+            if my_prev_envent is not None:
+                self.myevents.pop(day_month)
+                print('I removed new event to your file!')
+                with open('myevents.json', 'w') as outfile:
+                    json.dump(self.myevents, outfile)
+        else :
+            print(day_month)
+            self.myevents[day_month] = text
+            self.reminderE.setText('')
+            print('I added new event to your file!')
+            with open('myevents.json', 'w') as outfile:
+                json.dump(self.myevents, outfile)
+        
         
     
     def go_next_month(self):
@@ -596,8 +671,8 @@ class cal(QWidget):
         #self.tableWidget.clear()
         self.hide()
         event.ignore()
- 
-
+        
+# ##################################################################################################################################################Section III
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
