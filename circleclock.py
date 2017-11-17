@@ -231,9 +231,9 @@ class ui_widget(QMainWindow):
         event = event.split(' ')
         event = event[0] + ' ' + event[1]
         myevent = self.myevents.get(event, u'')
-        myevent = u'' if myevent == u'' else '\n یادآور: '+myevent
+        myevent = u'' if myevent == u'' else u'\n یادآور: '+myevent
         self.event_text = self.events.get(event, None) 
-        self.event_text = self.event_text if self.event_text is not None else 'امروز اتفاق خاصی نیفتاده!)'
+        self.event_text = self.event_text if self.event_text is not None else u'امروز اتفاق خاصی نیفتاده!'
         self.event_text += myevent
         self.setToolTip(self.event_text)
         
@@ -528,17 +528,16 @@ class cal(QWidget):
             y = j % 7
             item, num_text = self.create_per_num(i+1)
             #print(num_text + u' ' + self.month_dict[month])
-            if self.holidays.get(num_text + u' ' + self.month_dict[month], None) is not None:
-                item.setBackground(QColor(250,100,100))
-            elif self.myevents.get(num_text + u' ' + self.month_dict[month], None) is not None:
+            if self.myevents.get(num_text + u' ' + self.month_dict[month], None) is not None:
                 item.setBackground(QColor(100,250,100))
+            elif self.holidays.get(num_text + u' ' + self.month_dict[month], None) is not None or y%7 == 6:
+                item.setBackground(QColor(250,100,100))
             else:
                 item.setBackground(QColor(100,150,150, 100))
             self.tableWidget.setItem(x+1,y, item)
             if j-1 == day:
                 self.tableWidget.setCurrentCell(x+1,y)
-            if y%7 == 6:
-                self.tableWidget.item(x+1, y).setBackground(QColor(250,100,100))
+     
         self.tableWidget.move(0,0)
         self.tableWidget.cellClicked.connect(self.on_click)
         for i in range(7):
@@ -549,9 +548,14 @@ class cal(QWidget):
         myevent = ' '
         try:
             day = self.tableWidget.currentItem().text()
+            r = self.tableWidget.currentRow()
             day_month = day + ' ' + self.month_dict[self.month_idx]
             myevent = self.myevents.get(day_month, ' ')
-            if day != '':
+            if r == 0:
+                self.reminderL.setText(u'یک روز را انتخاب کن')
+                self.reminderB.setEnabled(False)
+                self.reminderE.setEnabled(False)
+            elif day != '':
                 self.reminderL.setText(day_month)
                 self.reminderB.setEnabled(True)
                 self.reminderE.setEnabled(True)
@@ -571,6 +575,7 @@ class cal(QWidget):
     def show_text(self):
         self.label.setText(self.text)
         self.label.setWordWrap(True)
+        
         #self.label.setAlignment(Qt.AlignLeft)
         
     def show_month(self):
