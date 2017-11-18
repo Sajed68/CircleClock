@@ -25,7 +25,7 @@
 
 
 # the libraries for ui menu:
-from PyQt5.QtWidgets import QApplication, QWidget, QToolTip, QPushButton, QMessageBox, QMainWindow, QMenu, qApp, QTableWidget,QTableWidgetItem,QVBoxLayout, QLabel, QGridLayout, QLineEdit
+from PyQt5.QtWidgets import QApplication, QWidget, QToolTip, QPushButton, QMessageBox, QMainWindow, QMenu, qApp, QTableWidget,QTableWidgetItem,QVBoxLayout, QLabel, QGridLayout, QLineEdit, QSlider, QFontComboBox, QGroupBox, QSpinBox
 from PyQt5.QtGui import QFont, QPainter, QColor, QPolygonF, QImage, QTransform, QPen
 from PyQt5.QtCore import QCoreApplication
 from PyQt5 import QtCore
@@ -46,7 +46,7 @@ import codecs
 class ui_widget(QMainWindow):
     def __init__(self):
         super(ui_widget, self).__init__()
-        self.setWindowTitle('Calendar')
+        self.setWindowTitle('CircleClock')
         # following line is a setting to remove icon at taskbar, BUT IT MUST BE QMainWindow:
         self.setWindowFlags(QtCore.Qt.Tool| QtCore.Qt.FramelessWindowHint) # To remove Title bar
         self.__read_config__()
@@ -69,6 +69,8 @@ class ui_widget(QMainWindow):
         self.clockwork = ':'
         self.cal = cal(self.events, self.holidays, self.myevents)
         self.cal.hide()
+        self.settings = settings(self.face, self.faceb, self.config)
+        self.settings.hide()
         self.__update__()
 
         # now need to call shower method!
@@ -107,11 +109,6 @@ class ui_widget(QMainWindow):
         self.qp.drawRect(100, 175, 150, 1)
         pen = QPen()
         pen.setWidth(10)
-        #pen.setColor( QColor(255,255,255))
-        #self.qp.setPen(pen)
-        #self.qp.setPen(pen)
-        #self.qp.setBrush(Qt.white)
-        #self.qp.drawArc(5, 0.0, 350.0, 350.0, -0*16, -180*16)
 
                 
         
@@ -171,8 +168,19 @@ class ui_widget(QMainWindow):
         y_hour = self.__un_round__(math.cos(hour) * 40)
         self.hour = (x_hour, y_hour)
         
+        ##config reupdated##
+        self.clockfont = self.config['clockfont']
+        self.clockfontsize = self.config['clockfontsize']
+        self.datefont = self.config['datefont']
+        self.datefontsize = self.config['datefontsize']
+        self.eventfont = self.config['eventfont']
+        self.eventfontsize = self.config['eventfontsize']
+        QToolTip.setFont(QFont(self.eventfont, self.eventfontsize))
+        #
+        
         self.__get_persian_date__()
         self.__show_events__()
+        
 
     
     
@@ -242,6 +250,7 @@ class ui_widget(QMainWindow):
         self.angle += 6
         self.angle = self.angle % 360
         self.clockface2 = ImageQt.ImageQt(self.faceb.rotate(self.angle)).scaled(350,350)
+        self.clockface = ImageQt.ImageQt(self.face).scaled(350,350)
         self.__update__()
         self.update()
         QApplication.processEvents()
@@ -283,7 +292,7 @@ class ui_widget(QMainWindow):
                 self.eventfontsize = self.config['eventfontsize']
                 print('config file loaded')
         except:
-            self.config = {"y": 560, "x": 1520, "open": "last", "clockfont": "Koodak", "datefont":"XP Vosta", "clockfontsize":34, "datefontsize":20, "eventfont":"Koodak", "eventfontsize":15}
+            self.config = {"y": 560, "x": 1520, "open": "last", "clockfont": "Koodak", "datefont":"XP Vosta", "clockfontsize":34, "datefontsize":20, "eventfont":"Koodak", "eventfontsize":15, "face_trans":255}
             self.x = self.config['x']
             self.y = self.config['y']
             self.clockfont = self.config['clockfont']
@@ -324,7 +333,12 @@ class ui_widget(QMainWindow):
         self.cal.get_date(self.jdate+[self.persian_date])
         self.cal.show()
         print ('pass')
-            
+    
+    
+    def __settings__(self):
+        self.settings.__open__()
+        self.settings.show()
+        print ('settings menu opened')
             
             
     def __un_round__(self,n):
@@ -343,15 +357,18 @@ class ui_widget(QMainWindow):
 
            quitAct = cmenu.addAction("بسته شم؟")
            event_cal = cmenu.addAction("نمایش تقویم")
+           setting = cmenu.addAction("تنظیمات")
            updateevent = cmenu.addAction("رویدادها رو بروز کنم؟ (اینترنت میخواهم!)")
            action = cmenu.exec_(self.mapToGlobal(event.pos()))
 
            
            if action == quitAct:
                self.close()
-           if action == event_cal:
+           elif action == event_cal:
                self.__cal_show__()
-           if action == updateevent:
+           elif action == setting:
+               self.__settings__()
+           elif action == updateevent:
                print ("I'm updataing myself by times.ir...")
                year = self.persian_date.split(' ')[-1]
                dic = {u'۰':'0', u'۱':'1', u'۲':'2', u'۳':'3', u'۴':'4', u'۵':'5', u'۶':'6', u'۷':'7', u'۸':'8', u'۹':'9'}
@@ -678,6 +695,163 @@ class cal(QWidget):
         event.ignore()
         
 # ##################################################################################################################################################Section III
+class settings(QWidget):
+    def __init__(self, f, fb, c):
+        super(settings, self).__init__()
+        self.setWindowTitle('تنظیمات')
+        self.setGeometry(500, 500, 400, 400)
+        self.setMinimumWidth(725)
+        self.setMinimumHeight(450)
+        self.setMaximumWidth(725)
+        self.setMaximumHeight(450)
+        
+        self.face = f
+        self.faceb = fb
+        self.facemask = Image.open('./arts/clockfacealphamask.png').convert('L')
+        
+        self.config = c
+        
+        self.alpha_slider = QSlider(Qt.Horizontal)
+        self.alpha_slider.valueChanged.connect(self.get_alpha_slider)
+        self.alpha_slider_label = QLabel('شدت محو شدن پس زمینه:')
+        self.alpha_slider_value_label = QLabel('text')
+        
+        self.clockfont_selector = QFontComboBox()
+        self.clockfont_selector.currentFontChanged.connect(self.clock_currentFontChange)
+        self.clockfontsize_selector = QSpinBox()
+        self.clockfontsize_selector.setValue(self.config["clockfontsize"])
+        self.clockfontsize_selector.valueChanged.connect(self.setclockfontsize)
+        
+        self.datefont_selector = QFontComboBox()
+        self.datefont_selector.currentFontChanged.connect(self.date_currentFontChange)
+        self.datefontsize_selector = QSpinBox()
+        self.datefontsize_selector.setValue(self.config["datefontsize"])
+        self.datefontsize_selector.valueChanged.connect(self.setdatefontsize)
+        
+        self.eventfont_selector = QFontComboBox()
+        self.eventfont_selector.currentFontChanged.connect(self.event_currentFontChange)
+        self.eventfontsize_selector = QSpinBox()
+        self.eventfontsize_selector.setValue(self.config["eventfontsize"])
+        self.eventfontsize_selector.valueChanged.connect(self.seteventfontsize)
+        
+        
+        self.__set_init_values__()
+        
+        self.group_color = QGroupBox()
+        self.group_color.setTitle(u"تنظیم رنگ:")
+        colorgrid = QGridLayout()
+        colorgrid.addWidget(self.alpha_slider_label, 0, 0)
+        colorgrid.addWidget(self.alpha_slider, 0, 1)
+        colorgrid.addWidget(self.alpha_slider_value_label, 0, 3)
+        self.group_color.setLayout(colorgrid)
+        
+        self.group_clockfont = QGroupBox()
+        self.group_clockfont.setTitle(u"تنظیم قلم ساعت:")
+        clockfontgrid = QGridLayout()
+        clockfontgrid.addWidget(self.clockfont_selector, 0, 0)
+        clockfontgrid.addWidget(self.clockfontsize_selector, 0, 1)
+        self.group_clockfont.setLayout(clockfontgrid)
+        
+        self.group_datefont = QGroupBox()
+        self.group_datefont.setTitle(u"تنظیم قلم تاریخ:")
+        datefontgrid = QGridLayout()
+        datefontgrid.addWidget(self.datefont_selector, 0, 0)
+        datefontgrid.addWidget(self.datefontsize_selector, 0, 1)
+        self.group_datefont.setLayout(datefontgrid)
+        
+        self.group_eventfont = QGroupBox()
+        self.group_eventfont.setTitle(u"تنظیم قلم نمایش رویداد:")
+        eventfontgrid = QGridLayout()
+        eventfontgrid.addWidget(self.eventfont_selector, 0, 0)
+        eventfontgrid.addWidget(self.eventfontsize_selector, 0, 1)
+        self.group_eventfont.setLayout(eventfontgrid)   
+        
+                
+        self.layout = QGridLayout()
+        self.setLayout(self.layout) 
+        
+        self.layout.addWidget(self.group_color, 0, 0, 1, -1)
+        self.layout.addWidget(self.group_clockfont, 1, 0)
+        self.layout.addWidget(self.group_datefont, 1, 1)
+        self.layout.addWidget(self.group_eventfont, 2, 0, 1, -1)
+        
+        
+        self.show()
+        
+    
+    def get_alpha_slider(self):
+        value = 255.0 * (self.alpha_slider.value()+1) / 100 
+        value = self.__change_nums__(value)
+        self.alpha_slider_value_label.setText(value)
+        self.__update_alpha__()
+        
+    def __change_nums__(self, num):
+        num_dicts = {'1':u'۱', '2':u'۲', '3':u'۳', '4':u'۴', '5':u'۵', '6':u'۶', '7':u'۷', '8':u'۸', '9':u'۹', '0':u'۰'}
+        num = str(int(num))
+        per_num = [num_dicts[i] for i in num]
+        out = per_num[0]
+        for i in range(1, len(per_num)):
+            out += per_num[i]
+        return out
+        
+        
+    def __set_init_values__(self):
+        #r, g, b, a = self.face.getpixel((500, 500))
+        num = self.config["face_trans"]
+        value = self.__change_nums__(num)
+        self.alpha_slider_value_label.setText(value)
+        a = int(100.0 * num/255 - 1)
+        self.alpha_slider.setValue(a)
+        self.__update_alpha__()
+        self.clockfont_selector.setCurrentFont(QFont(self.config["clockfont"]))
+        self.datefont_selector.setCurrentFont(QFont(self.config["datefont"]))
+        self.eventfont_selector.setCurrentFont(QFont(self.config["eventfont"]))
+        
+    def clock_currentFontChange(self):
+        font = self.clockfont_selector.currentFont().family()
+        self.config["clockfont"] = font
+        
+    def setclockfontsize(self):
+        size = self.clockfontsize_selector.value()
+        if type(size) == type(1):
+            self.config["clockfontsize"] = size
+    
+    def date_currentFontChange(self):
+        font = self.datefont_selector.currentFont().family()
+        self.config["datefont"] = font
+        
+    def setdatefontsize(self):
+        size = self.datefontsize_selector.value()
+        if type(size) == type(1):
+            self.config["datefontsize"] = size
+            
+    def event_currentFontChange(self):
+        font = self.eventfont_selector.currentFont().family()
+        self.config["eventfont"] = font
+        
+    def seteventfontsize(self):
+        size = self.eventfontsize_selector.value()
+        if type(size) == type(1):
+            self.config["eventfontsize"] = size
+    
+    def __update_alpha__(self):
+        va = self.alpha_slider.value()
+        va = int(255.0 * (va+1) / 100)
+        K = self.facemask.copy()
+        d = K.getdata()
+        p = [int(i*va/255) for i in d]
+        K.putdata(p)
+        self.face.putalpha(K)
+        self.config["face_trans"] = va
+    
+    def __open__(self):
+        pass
+    
+    def closeEvent(self, event):
+        self.hide()
+        event.ignore()
+        
+# ##################################################################################################################################################Section IV
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
