@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 
 # ***************************License:***********************************
@@ -31,7 +32,7 @@ from PyQt5.QtCore import QCoreApplication
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt, QPointF
 import math
-from PIL import Image, ImageQt
+from PIL import Image, ImageQt, ImageDraw
 from PyQt5.QtCore import QDateTime, QDate, QTimer # because I want get away from time for calculation the time!
 import sys
 sys.path.append('./utils')
@@ -58,11 +59,11 @@ class ui_widget(QMainWindow):
         self.setMinimumHeight(400)
         self.setMaximumWidth(400)
         self.setMaximumHeight(400)
-        self.faceb = Image.open('./arts/clockface_2.png')
-        self.face = Image.open('./arts/clockface.png')
+        self.faceb = Image.new(mode='RGBA', color=(0,0,0,0), size=(350,350))#.open('./arts/clockface_2.png')
+        self.face = Image.new(mode='RGBA', color=(0,0,0,0), size=(350,350))
         self.angle = 0
-        self.clockface = ImageQt.ImageQt(self.face).scaled(350,350)
-        self.clockface2 = ImageQt.ImageQt(self.faceb).scaled(350,350)
+        self.clockface = ImageQt.ImageQt(self.face)
+        self.clockface2 = ImageQt.ImageQt(self.faceb)#.scaled(350,350)
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.animate)
         self.timer.start(500)
@@ -253,8 +254,8 @@ class ui_widget(QMainWindow):
         self.clockwork = u':' if self.clockwork == u'.' else u'.'
         self.angle += 6
         self.angle = self.angle % 360
-        self.clockface2 = ImageQt.ImageQt(self.faceb.rotate(self.angle)).scaled(350,350)
-        self.clockface = ImageQt.ImageQt(self.face).scaled(350,350)
+        self.clockface2 = ImageQt.ImageQt(self.faceb.rotate(self.angle))#.scaled(350,350)
+        self.clockface = ImageQt.ImageQt(self.face)
         self.__update__()
         self.update()
         QApplication.processEvents()
@@ -298,14 +299,14 @@ class ui_widget(QMainWindow):
                 self.eventfontsize = self.config['eventfontsize']
                 self.clockcolor = self.config['clockcolor']
                 self.datecolor = self.config['datecolor']
-                a = self.config["face_trans"]
-                a = self.config["out_trans"]
+                a = self.config["face_color"]
+                #a = self.config["out_trans"]
                 a = self.config["seconds_color"]
                 a = self.config["second_color"]
-                a = self.config["faceb_trans"]
+                a = self.config["faceb_color"]
                 print('config file loaded')
         except:
-            self.config = {"y": 560, "x": 1520, "open": "last", "clockfont": "Koodak", "datefont":"XP Vosta", "clockfontsize":34, "datefontsize":20, "eventfont":"Koodak", "eventfontsize":15, "face_trans":255, "clockcolor":(255,255,255), "datecolor":(255,255,255), "out_trans":255, "seconds_color":(255,255,255), "second_color":(178,34,34), "faceb_trans":255}
+            self.config = {"y": 560, "x": 1520, "open": "last", "clockfont": "Koodak", "datefont":"XP Vosta", "clockfontsize":34, "datefontsize":20, "eventfont":"Koodak", "eventfontsize":15, "face_color":(255,160,0,128), "clockcolor":(255,255,255), "datecolor":(255,255,255),  "seconds_color":(255,255,255), "second_color":(178,34,34), "faceb_color":(255,160,0, 128)}
             self.x = self.config['x']
             self.y = self.config['y']
             self.clockfont = self.config['clockfont']
@@ -401,7 +402,7 @@ class cal(QWidget):
                       11:u'بهمن',
                       12:u'اسفند',
             }
-        self.setWindowTitle('Calendar_veiw')
+        self.setWindowTitle(u'نمای تقویم')
         self.setGeometry(500, 500, 400, 400)
         self.setMinimumWidth(725)
         self.setMinimumHeight(450)
@@ -647,14 +648,14 @@ class settings(QWidget):
         self.setWindowTitle('تنظیمات')
         self.setGeometry(500, 500, 400, 400)
         self.setMinimumWidth(725)
-        self.setMinimumHeight(450)
+        self.setMinimumHeight(500)
         self.setMaximumWidth(725)
-        self.setMaximumHeight(450)
+        self.setMaximumHeight(500)
         
         self.face = f
         self.faceb = fb
-        self.facemask = Image.open('./arts/clockfacealphamask.png').convert('L')
-        self.facebmask = Image.open('./arts/clockface_2alphamask.png')
+        #self.facemask = Image.open('./arts/clockfacealphamask.png').convert('L')
+        self.facebmask = Image.open('./arts/clockface_2alphamask.png').resize((350,350))
 
         self.events = e
         self.holidays = h
@@ -671,10 +672,41 @@ class settings(QWidget):
         self.alpha_slider_label = QLabel('شدت محو شدن پس زمینه:')
         self.alpha_slider_value_label = QLabel('text')
         
+        self.red_slider = QSlider(Qt.Horizontal)
+        self.red_slider.valueChanged.connect(self.get_alpha_slider)
+        self.red_slider_label = QLabel('رنگ قرمز:')
+        self.red_slider_value_label = QLabel('text')
+        
+        self.blue_slider = QSlider(Qt.Horizontal)
+        self.blue_slider.valueChanged.connect(self.get_alpha_slider)
+        self.blue_slider_label = QLabel('رنگ آبی:')
+        self.blue_slider_value_label = QLabel('text')
+        
+        self.green_slider = QSlider(Qt.Horizontal)
+        self.green_slider.valueChanged.connect(self.get_alpha_slider)
+        self.green_slider_label = QLabel('رنگ سبز:')
+        self.green_slider_value_label = QLabel('text')
+        
+
         self.alpha_sliderb = QSlider(Qt.Horizontal)
         self.alpha_sliderb.valueChanged.connect(self.get_alpha_sliderb)
         self.alpha_sliderb_label = QLabel('شدت محو شدن:')
         self.alpha_sliderb_value_label = QLabel('text')
+        
+        self.red_sliderb = QSlider(Qt.Horizontal)
+        self.red_sliderb.valueChanged.connect(self.get_alpha_sliderb)
+        self.red_sliderb_label = QLabel('رنگ قرمز:')
+        self.red_sliderb_value_label = QLabel('text')
+        
+        self.blue_sliderb = QSlider(Qt.Horizontal)
+        self.blue_sliderb.valueChanged.connect(self.get_alpha_sliderb)
+        self.blue_sliderb_label = QLabel('رنگ آبی:')
+        self.blue_sliderb_value_label = QLabel('text')
+        
+        self.green_sliderb = QSlider(Qt.Horizontal)
+        self.green_sliderb.valueChanged.connect(self.get_alpha_sliderb)
+        self.green_sliderb_label = QLabel('رنگ سبز:')
+        self.green_sliderb_value_label = QLabel('text')
         ### clock shower setting
         self.clockfont_selector = QFontComboBox()
         self.clockfont_selector.currentFontChanged.connect(self.clock_currentFontChange)
@@ -686,7 +718,6 @@ class settings(QWidget):
         color = QColor(self.clockcolor[0],self.clockcolor[1],self.clockcolor[2]).name()
         self.clockcolorpicker.setStyleSheet(u"QPushButton {background-color: "+color+u';color:red;}')
         self.clockcolorpicker.clicked.connect(self.pickclockcolor)
-        
         
         ### date shower setting
         self.datefont_selector = QFontComboBox()
@@ -730,9 +761,35 @@ class settings(QWidget):
         colorgrid.addWidget(self.alpha_slider_label, 0, 0)
         colorgrid.addWidget(self.alpha_slider, 0, 1)
         colorgrid.addWidget(self.alpha_slider_value_label, 0, 3)
-        colorgrid.addWidget(self.alpha_sliderb_label, 1, 0)
-        colorgrid.addWidget(self.alpha_sliderb, 1, 1)
-        colorgrid.addWidget(self.alpha_sliderb_value_label, 1, 3)
+        
+        colorgrid.addWidget(self.red_slider_label, 1, 0)
+        colorgrid.addWidget(self.red_slider, 1, 1)
+        colorgrid.addWidget(self.red_slider_value_label, 1, 3)
+        
+        colorgrid.addWidget(self.blue_slider_label, 3, 0)
+        colorgrid.addWidget(self.blue_slider, 3, 1)
+        colorgrid.addWidget(self.blue_slider_value_label, 3, 3)
+        
+        colorgrid.addWidget(self.green_slider_label, 2, 0)
+        colorgrid.addWidget(self.green_slider, 2, 1)
+        colorgrid.addWidget(self.green_slider_value_label, 2, 3)
+        
+        colorgrid.addWidget(self.alpha_sliderb_label, 4, 0)
+        colorgrid.addWidget(self.alpha_sliderb, 4, 1)
+        colorgrid.addWidget(self.alpha_sliderb_value_label, 4, 3)
+        
+        colorgrid.addWidget(self.red_sliderb_label, 5, 0)
+        colorgrid.addWidget(self.red_sliderb, 5, 1)
+        colorgrid.addWidget(self.red_sliderb_value_label, 5, 3)
+        
+        colorgrid.addWidget(self.blue_sliderb_label, 7, 0)
+        colorgrid.addWidget(self.blue_sliderb, 7, 1)
+        colorgrid.addWidget(self.blue_sliderb_value_label, 7, 3)
+        
+        colorgrid.addWidget(self.green_sliderb_label, 6, 0)
+        colorgrid.addWidget(self.green_sliderb, 6, 1)
+        colorgrid.addWidget(self.green_sliderb_value_label, 6, 3)
+        
         self.group_color.setLayout(colorgrid)
         ### Group for clock font
         self.group_clockfont = QGroupBox()
@@ -794,12 +851,38 @@ class settings(QWidget):
         value = 255.0 * (self.alpha_slider.value()+1) / 100 
         value = self.__change_nums__(value)
         self.alpha_slider_value_label.setText(value)
+        
+        value = 255.0 * (self.red_slider.value()+1) / 100 
+        value = self.__change_nums__(value)
+        self.red_slider_value_label.setText(value)
+        
+        value = 255.0 * (self.green_slider.value()+1) / 100 
+        value = self.__change_nums__(value)
+        self.green_slider_value_label.setText(value)
+        
+        value = 255.0 * (self.blue_slider.value()+1) / 100 
+        value = self.__change_nums__(value)
+        self.blue_slider_value_label.setText(value)
+        
         self.__update_alpha__()
     
     def get_alpha_sliderb(self):
         value = 255.0 * (self.alpha_sliderb.value()+1) / 100 
         value = self.__change_nums__(value)
         self.alpha_sliderb_value_label.setText(value)
+        
+        value = 255.0 * (self.red_sliderb.value()+1) / 100 
+        value = self.__change_nums__(value)
+        self.red_sliderb_value_label.setText(value)
+        
+        value = 255.0 * (self.green_sliderb.value()+1) / 100 
+        value = self.__change_nums__(value)
+        self.green_sliderb_value_label.setText(value)
+        
+        value = 255.0 * (self.blue_sliderb.value()+1) / 100 
+        value = self.__change_nums__(value)
+        self.blue_sliderb_value_label.setText(value)
+        
         self.__update_alphab__()
         
     def __change_nums__(self, num):
@@ -814,16 +897,50 @@ class settings(QWidget):
         
     def __set_init_values__(self):
         #r, g, b, a = self.face.getpixel((500, 500))
-        num = self.config["face_trans"]
-        numb = self.config["faceb_trans"]
-        value = self.__change_nums__(num)
-        valueb = self.__change_nums__(numb)
-        self.alpha_slider_value_label.setText(value)
-        self.alpha_sliderb_value_label.setText(valueb)
-        a = int(100.0 * num/255 - 1)
-        ab = int(100.0 * numb/255 - 1)
+        numred, numgreen, numblue, numalpha = self.config["face_color"]
+        numredb, numgreenb, numblueb, numalphab = self.config["faceb_color"]
+        
+        valuered = self.__change_nums__(numred)
+        valueblue = self.__change_nums__(numblue)
+        valuegreen = self.__change_nums__(numgreen)
+        valuealpha = self.__change_nums__(numalpha)
+
+        self.alpha_slider_value_label.setText(valuealpha)
+        self.red_slider_value_label.setText(valuered)
+        self.blue_slider_value_label.setText(valueblue)
+        self.green_slider_value_label.setText(valuegreen)
+        
+        valueredb = self.__change_nums__(numredb)
+        valueblueb = self.__change_nums__(numblueb)
+        valuegreenb = self.__change_nums__(numgreenb)
+        valuealphab = self.__change_nums__(numalphab)
+ 
+        self.alpha_sliderb_value_label.setText(valuealphab)
+        self.red_sliderb_value_label.setText(valueredb)
+        self.blue_sliderb_value_label.setText(valueblueb)
+        self.green_sliderb_value_label.setText(valuegreenb)
+        
+        a = int(100.0 * numalpha/255 - 1)
+        r = int(100.0 * numred/255 - 1)
+        b = int(100.0 * numblue/255 - 1)
+        g = int(100.0 * numgreen/255 - 1)
+        
+        ab = int(100.0 * numalphab/255 - 1)
+        rb = int(100.0 * numredb/255 - 1)
+        bb = int(100.0 * numblueb/255 - 1)
+        gb = int(100.0 * numgreenb/255 - 1)
+
         self.alpha_slider.setValue(a)
+        self.red_slider.setValue(r)
+        self.blue_slider.setValue(b)
+        self.green_slider.setValue(g)
+        
         self.alpha_sliderb.setValue(ab)
+        self.red_sliderb.setValue(rb)
+        self.blue_sliderb.setValue(bb)
+        self.green_sliderb.setValue(gb)
+
+        
         self.__update_alpha__()
         self.__update_alphab__()
         self.clockfont_selector.setCurrentFont(QFont(self.config["clockfont"]))
@@ -974,22 +1091,35 @@ class settings(QWidget):
     def __update_alpha__(self):
         va = self.alpha_slider.value()
         va = int(255.0 * (va+1) / 100)
-        K = self.facemask.copy()
-        d = K.getdata()
-        p = [int(i*va/255) for i in d]
-        K.putdata(p)
-        self.face.putalpha(K)
-        self.config["face_trans"] = va
+        vr = self.red_slider.value()
+        vr = int(255.0 * (vr+1) / 100)
+        vb = self.blue_slider.value()
+        vb = int(255.0 * (vb+1) / 100)
+        vg = self.green_slider.value()
+        vg = int(255.0 * (vg+1) / 100)
+        I = Image.new(mode='RGBA', color=(0,0,0,0), size=(350, 350))
+        draw = ImageDraw.Draw(I)
+        draw.ellipse(xy=[(52, 52), (297, 297)], fill=(vr,vg,vb,va))
+        self.face.putdata(I.getdata())
+        self.config["face_color"] = (vr,vg,vb,va)
         
     def __update_alphab__(self):
         va = self.alpha_sliderb.value()
         va = int(255.0 * (va+1) / 100)
-        K = self.facebmask.copy()
-        d = K.getdata()
-        p = [int(i*va/255) for i in d]
-        K.putdata(p)
-        self.faceb.putalpha(K)
-        self.config["faceb_trans"] = va
+        vr = self.red_sliderb.value()
+        vr = int(255.0 * (vr+1) / 100)
+        vb = self.blue_sliderb.value()
+        vb = int(255.0 * (vb+1) / 100)
+        vg = self.green_sliderb.value()
+        vg = int(255.0 * (vg+1) / 100)
+        mp = self.facebmask.load()
+        pixels = self.faceb.load()
+        for x in range(self.faceb.width):
+            for y in range(self.faceb.height):
+                p = mp[x, y]
+                if p != 0:
+                    pixels[x,y] = (vr, vg, vb, int(va * p/255))
+        self.config["faceb_color"] = (vr,vg,vb,va)
     
     def __open__(self, pd):
         self.persian_date = pd
