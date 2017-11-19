@@ -19,13 +19,13 @@
 # Start: 13 Mehr 1396
 # First Release 13 Mehr 1396
 # Third Release 24 Aban 1396
-# version 2.0
-# Release date: 25 Aban
+# version 2.0.1
+# Release date: 28 Aban
 # #####################################################
 
 
 # the libraries for ui menu:
-from PyQt5.QtWidgets import QApplication, QWidget, QToolTip, QPushButton, QMessageBox, QMainWindow, QMenu, qApp, QTableWidget,QTableWidgetItem,QVBoxLayout, QLabel, QGridLayout, QLineEdit, QSlider, QFontComboBox, QGroupBox, QSpinBox
+from PyQt5.QtWidgets import QApplication, QWidget, QToolTip, QPushButton, QMessageBox, QMainWindow, QMenu, qApp, QTableWidget,QTableWidgetItem,QVBoxLayout, QLabel, QGridLayout, QLineEdit, QSlider, QFontComboBox, QGroupBox, QSpinBox, QColorDialog, QProgressBar
 from PyQt5.QtGui import QFont, QPainter, QColor, QPolygonF, QImage, QTransform, QPen
 from PyQt5.QtCore import QCoreApplication
 from PyQt5 import QtCore
@@ -69,7 +69,7 @@ class ui_widget(QMainWindow):
         self.clockwork = ':'
         self.cal = cal(self.events, self.holidays, self.myevents)
         self.cal.hide()
-        self.settings = settings(self.face, self.faceb, self.config)
+        self.settings = settings(self.face, self.faceb, self.config, self.events, self.holidays)
         self.settings.hide()
         self.__update__()
 
@@ -96,16 +96,18 @@ class ui_widget(QMainWindow):
         # Draw clock number ponits :
         self.__draw_clock_number_points__()
         # write the date:
-        self.qp.setPen(QColor(255, 255, 255))
-        self.qp.setBrush(QColor(255, 255, 255))
+        self.qp.setPen(QColor(self.datecolor[0],self.datecolor[1],self.datecolor[2]))
+        self.qp.setBrush(QColor(self.datecolor[0],self.datecolor[1],self.datecolor[2]))
         self.qp.setFont(QFont(self.datefont, self.datefontsize)) # XP Vosta #
         self.qp.drawText(175 - 75, 180, 150, 75, Qt.AlignCenter, self.persian_date)
         
-        self.qp.setPen(QColor(255, 255, 255))
-        self.qp.setBrush(QColor(255, 255, 255))
+        self.qp.setPen(QColor(self.clockcolor[0],self.clockcolor[1],self.clockcolor[2]))
+        self.qp.setBrush(QColor(self.clockcolor[0],self.clockcolor[1],self.clockcolor[2]))
         self.qp.setFont(QFont(self.clockfont, self.clockfontsize)) #
         self.qp.drawText(175 - 85, 130, 171, 35, Qt.AlignCenter, self.persian_time)
         
+        self.qp.setBrush(QColor(self.seconds_color[0],self.seconds_color[1],self.seconds_color[2]))
+        self.qp.setPen(QColor(self.seconds_color[0],self.seconds_color[1],self.seconds_color[2]))
         self.qp.drawRect(100, 175, 150, 1)
         pen = QPen()
         pen.setWidth(10)
@@ -126,12 +128,12 @@ class ui_widget(QMainWindow):
             poly = QPolygonF()
             a = (i+1) * math.pi  / 30
             if True: #i != ps:
-                self.qp.setBrush(Qt.white)
-                self.qp.setPen(Qt.white)
+                self.qp.setBrush(QColor(self.seconds_color[0],self.seconds_color[1],self.seconds_color[2]))
+                self.qp.setPen(QColor(self.seconds_color[0],self.seconds_color[1],self.seconds_color[2]))
                 c, v = self.__rotate_the_points__(a, 1, -110)
                 self.qp.drawEllipse(x1 - c - 3, y1 - v - 3, 6, 6)
             if i == ps:
-                col = QColor(178,34,34)
+                col = QColor(self.second_color[0],self.second_color[1],self.second_color[2])
                 self.qp.setBrush(col)
                 self.qp.setPen(col)
                 #self.qp.setOpacity(0.0)
@@ -175,6 +177,10 @@ class ui_widget(QMainWindow):
         self.datefontsize = self.config['datefontsize']
         self.eventfont = self.config['eventfont']
         self.eventfontsize = self.config['eventfontsize']
+        self.clockcolor = self.config['clockcolor']
+        self.datecolor = self.config['datecolor']
+        self.second_color = self.config['second_color']
+        self.seconds_color = self.config['seconds_color']
         QToolTip.setFont(QFont(self.eventfont, self.eventfontsize))
         #
         
@@ -182,8 +188,6 @@ class ui_widget(QMainWindow):
         self.__show_events__()
         
 
-    
-    
     def __get_persian_date__(self):
         year, month, day = self.date
         year = int(year)
@@ -275,6 +279,8 @@ class ui_widget(QMainWindow):
                 self.holidays = json.load(holidays)
         except:
             print("I can't load events file :(")
+            self.events = {u"پایان":0}
+            self.holidays = {u"پایان":0}
         try:
             with open('config.json', 'r') as configfile:
                 self.config = json.load(configfile)
@@ -290,9 +296,16 @@ class ui_widget(QMainWindow):
                 self.datefontsize = self.config['datefontsize']
                 self.eventfont = self.config['eventfont']
                 self.eventfontsize = self.config['eventfontsize']
+                self.clockcolor = self.config['clockcolor']
+                self.datecolor = self.config['datecolor']
+                a = self.config["face_trans"]
+                a = self.config["out_trans"]
+                a = self.config["seconds_color"]
+                a = self.config["second_color"]
+                a = self.config["faceb_trans"]
                 print('config file loaded')
         except:
-            self.config = {"y": 560, "x": 1520, "open": "last", "clockfont": "Koodak", "datefont":"XP Vosta", "clockfontsize":34, "datefontsize":20, "eventfont":"Koodak", "eventfontsize":15, "face_trans":255}
+            self.config = {"y": 560, "x": 1520, "open": "last", "clockfont": "Koodak", "datefont":"XP Vosta", "clockfontsize":34, "datefontsize":20, "eventfont":"Koodak", "eventfontsize":15, "face_trans":255, "clockcolor":(255,255,255), "datecolor":(255,255,255), "out_trans":255, "seconds_color":(255,255,255), "second_color":(178,34,34), "faceb_trans":255}
             self.x = self.config['x']
             self.y = self.config['y']
             self.clockfont = self.config['clockfont']
@@ -301,6 +314,8 @@ class ui_widget(QMainWindow):
             self.datefontsize = self.config['datefontsize']
             self.eventfont = self.config['eventfont']
             self.eventfontsize = self.config['eventfontsize']
+            self.clockcolor = self.config['clockcolor']
+            self.datecolor = self.config['datecolor']
             print("config can't loaded")
         try:
             with open('config.json', 'w') as outfile:
@@ -336,7 +351,7 @@ class ui_widget(QMainWindow):
     
     
     def __settings__(self):
-        self.settings.__open__()
+        self.settings.__open__(self.persian_date)
         self.settings.show()
         print ('settings menu opened')
             
@@ -358,7 +373,7 @@ class ui_widget(QMainWindow):
            quitAct = cmenu.addAction("بسته شم؟")
            event_cal = cmenu.addAction("نمایش تقویم")
            setting = cmenu.addAction("تنظیمات")
-           updateevent = cmenu.addAction("رویدادها رو بروز کنم؟ (اینترنت میخواهم!)")
+           #updateevent = cmenu.addAction("رویدادها رو بروز کنم؟ (اینترنت میخواهم!)")
            action = cmenu.exec_(self.mapToGlobal(event.pos()))
 
            
@@ -368,75 +383,6 @@ class ui_widget(QMainWindow):
                self.__cal_show__()
            elif action == setting:
                self.__settings__()
-           elif action == updateevent:
-               print ("I'm updataing myself by times.ir...")
-               year = self.persian_date.split(' ')[-1]
-               dic = {u'۰':'0', u'۱':'1', u'۲':'2', u'۳':'3', u'۴':'4', u'۵':'5', u'۶':'6', u'۷':'7', u'۸':'8', u'۹':'9'}
-               day = u'۰۱۲۳۴۵۶۷۸۹'
-               year = u''.join([dic.get(i) for i in year])
-               print ("year = ", year)
-               m = [31] * 6 + [30] * 5 + [29]
-               month_dict = {1:u'فروردین',
-                      2:u'اردیبهشت',
-                      3:u'خرداد',
-                      4:u'تیر',
-                      5:u'مرداد',
-                      6:u'شهریور',
-                      7:u'مهر',
-                      8:u'آبان',
-                      9:u'آذر',
-                      10:u'دی',
-                      11:u'بهمن',
-                      12:u'اسفند',
-            }
-               EV = open('events.json', 'w')
-               HD = open('holidays.json', 'w')
-               EV.writelines('{\n')
-               HD.writelines('{\n')
-               for i in range(1, 13):
-                   for j in range(1, m[i-1]+1):
-                       url = 'http://www.time.ir/fa/event/list/0/'+year+'/'+str(i)+'/'+ str(j)
-                       page = requests.get(url)
-                       holiday = 0 if page.content.find(b'eventHoliday') == -1 else 1
-                       tree = html.fromstring(page.content)
-                       tt = tree.xpath('//li/text()')
-                       if len(tt) == 0:
-                           pass
-                       else:
-                           a = [tt[k] for k in range(len(tt)) if k % 3 == 1]
-                           b = [c.split('\r\n')[1] for c in a]
-                           for c in range(len(b)):
-                               for k in range(len(b[c])):
-                                   if  b[c][k] != u' ' or b[c][k] != ' ':
-                                       break
-                                       print("I break it")
-                               b[c] = b[c][k::]
-                           text = ''
-                           for t in b:
-                               text = text + t + '-'
-                               d = u''.join([day[int(l)] for l in str(j)])
-                           holitext = u' (تعطیل)' if holiday == 1 else u''
-                           line = u'"' + d + u' ' + month_dict[i]+u'": '+ u'"'+text+holitext+'",\n'
-                           if holiday == 1:
-                               #L = u'"' + u' ' + month_dict[i]+u'": '+ u'"'+d+'",\n'
-                               L = u'"'+ d + u' ' + month_dict[i]+u'": '+ u'"'+d+'",\n'
-                               if sys.version[0] == '2':
-                                   L = L.encode('utf-8')
-                               HD.writelines(L)
-                               
-                           if sys.version[0] == '2':
-                               line = line.encode('utf-8')
-                           EV.writelines(line)
-                           print (text)
-                       time.sleep(0.5)
-                
-               EV.writelines('"پایان":"پایان"')
-               EV.writelines("}")
-               EV.close()
-               HD.writelines('"پایان":"پایان"')
-               HD.writelines("}")
-               HD.close()
-
 
 # ##########################################################################################################################################################Section II 
 class cal(QWidget):
@@ -696,7 +642,7 @@ class cal(QWidget):
         
 # ##################################################################################################################################################Section III
 class settings(QWidget):
-    def __init__(self, f, fb, c):
+    def __init__(self, f, fb, c, e, h):
         super(settings, self).__init__()
         self.setWindowTitle('تنظیمات')
         self.setGeometry(500, 500, 400, 400)
@@ -708,63 +654,126 @@ class settings(QWidget):
         self.face = f
         self.faceb = fb
         self.facemask = Image.open('./arts/clockfacealphamask.png').convert('L')
+        self.facebmask = Image.open('./arts/clockface_2alphamask.png')
+
+        self.events = e
+        self.holidays = h
         
         self.config = c
+        self.clockcolor = self.config['clockcolor']
+        self.datecolor = self.config['datecolor']
+        self.seconds_color = self.config['seconds_color']
+        self.second_color = self.config['second_color']
         
+        ### color setting
         self.alpha_slider = QSlider(Qt.Horizontal)
         self.alpha_slider.valueChanged.connect(self.get_alpha_slider)
         self.alpha_slider_label = QLabel('شدت محو شدن پس زمینه:')
         self.alpha_slider_value_label = QLabel('text')
         
+        self.alpha_sliderb = QSlider(Qt.Horizontal)
+        self.alpha_sliderb.valueChanged.connect(self.get_alpha_sliderb)
+        self.alpha_sliderb_label = QLabel('شدت محو شدن:')
+        self.alpha_sliderb_value_label = QLabel('text')
+        ### clock shower setting
         self.clockfont_selector = QFontComboBox()
         self.clockfont_selector.currentFontChanged.connect(self.clock_currentFontChange)
         self.clockfontsize_selector = QSpinBox()
         self.clockfontsize_selector.setValue(self.config["clockfontsize"])
         self.clockfontsize_selector.valueChanged.connect(self.setclockfontsize)
+        self.clockcolorpicker = QPushButton()
+        self.clockcolorpicker.setText('')
+        color = QColor(self.clockcolor[0],self.clockcolor[1],self.clockcolor[2]).name()
+        self.clockcolorpicker.setStyleSheet(u"QPushButton {background-color: "+color+u';color:red;}')
+        self.clockcolorpicker.clicked.connect(self.pickclockcolor)
         
+        
+        ### date shower setting
         self.datefont_selector = QFontComboBox()
         self.datefont_selector.currentFontChanged.connect(self.date_currentFontChange)
         self.datefontsize_selector = QSpinBox()
         self.datefontsize_selector.setValue(self.config["datefontsize"])
         self.datefontsize_selector.valueChanged.connect(self.setdatefontsize)
-        
+        self.datecolorpicker = QPushButton()
+        self.datecolorpicker.setText('')
+        color = QColor(self.datecolor[0],self.datecolor[1],self.datecolor[2]).name()
+        self.datecolorpicker.setStyleSheet(u"QPushButton {background-color: "+color+u';color:red;}')
+        self.datecolorpicker.clicked.connect(self.pickdatecolor)
+        ### event popup setting
         self.eventfont_selector = QFontComboBox()
         self.eventfont_selector.currentFontChanged.connect(self.event_currentFontChange)
         self.eventfontsize_selector = QSpinBox()
         self.eventfontsize_selector.setValue(self.config["eventfontsize"])
         self.eventfontsize_selector.valueChanged.connect(self.seteventfontsize)
+        ### event updater objects:
+        self.update_events = QPushButton(u"به روز رسانی رویدادها")
+        self.update_events.clicked.connect(self.eventUpdater)
+        self.update_events_progressbar = QProgressBar()
+        ### seconds color objects:
+        self.secondslabel = QLabel(u"تنظیم رنگ حلقه:")
+        self.secondscolorpicker = QPushButton("")
+        color = QColor(self.seconds_color[0],self.seconds_color[1],self.seconds_color[2]).name()
+        self.secondscolorpicker.setStyleSheet(u"QPushButton {background-color: "+color+u';color:red;}')
+        self.secondscolorpicker.clicked.connect(self.picksecondscolor)
+        self.secondlabel = QLabel(u"تنظیم رنگ ثانیه شمار:")
+        self.secondcolorpicker = QPushButton("")
+        color = QColor(self.second_color[0],self.second_color[1],self.second_color[2]).name()
+        self.secondcolorpicker.setStyleSheet(u"QPushButton {background-color: "+color+u';color:red;}')
+        self.secondcolorpicker.clicked.connect(self.picksecondcolor)
         
         
         self.__set_init_values__()
-        
+        ### Group for background color
         self.group_color = QGroupBox()
         self.group_color.setTitle(u"تنظیم رنگ:")
         colorgrid = QGridLayout()
         colorgrid.addWidget(self.alpha_slider_label, 0, 0)
         colorgrid.addWidget(self.alpha_slider, 0, 1)
         colorgrid.addWidget(self.alpha_slider_value_label, 0, 3)
+        colorgrid.addWidget(self.alpha_sliderb_label, 1, 0)
+        colorgrid.addWidget(self.alpha_sliderb, 1, 1)
+        colorgrid.addWidget(self.alpha_sliderb_value_label, 1, 3)
         self.group_color.setLayout(colorgrid)
-        
+        ### Group for clock font
         self.group_clockfont = QGroupBox()
         self.group_clockfont.setTitle(u"تنظیم قلم ساعت:")
         clockfontgrid = QGridLayout()
         clockfontgrid.addWidget(self.clockfont_selector, 0, 0)
         clockfontgrid.addWidget(self.clockfontsize_selector, 0, 1)
+        clockfontgrid.addWidget(self.clockcolorpicker, 0, 2)
         self.group_clockfont.setLayout(clockfontgrid)
-        
+        ### Group for date font
         self.group_datefont = QGroupBox()
         self.group_datefont.setTitle(u"تنظیم قلم تاریخ:")
         datefontgrid = QGridLayout()
         datefontgrid.addWidget(self.datefont_selector, 0, 0)
         datefontgrid.addWidget(self.datefontsize_selector, 0, 1)
+        datefontgrid.addWidget(self.datecolorpicker, 0, 2)
         self.group_datefont.setLayout(datefontgrid)
-        
+        ### Group for event font
         self.group_eventfont = QGroupBox()
         self.group_eventfont.setTitle(u"تنظیم قلم نمایش رویداد:")
         eventfontgrid = QGridLayout()
         eventfontgrid.addWidget(self.eventfont_selector, 0, 0)
         eventfontgrid.addWidget(self.eventfontsize_selector, 0, 1)
-        self.group_eventfont.setLayout(eventfontgrid)   
+        self.group_eventfont.setLayout(eventfontgrid)
+        ### Group for  update events
+        self.group_eventupdate = QGroupBox()
+        self.group_eventupdate.setTitle(u"تنطیمات بروزرسانی:")
+        updategrid = QGridLayout()
+        updategrid.addWidget(self.update_events, 0,0)
+        updategrid.addWidget(self.update_events_progressbar, 0, 1)
+        self.group_eventupdate.setLayout(updategrid)
+        ### Group for seconds
+        self.group_second = QGroupBox()
+        self.group_second.setTitle(u"تنظیم رنگ حلقه ثانیه شمار:")
+        secondgrid = QGridLayout()
+        secondgrid.addWidget(self.secondslabel, 0, 0)
+        secondgrid.addWidget(self.secondscolorpicker, 0, 1)
+        secondgrid.addWidget(self.secondlabel, 1, 0)
+        secondgrid.addWidget(self.secondcolorpicker, 1, 1)
+        self.group_second.setLayout(secondgrid)
+ 
         
                 
         self.layout = QGridLayout()
@@ -773,7 +782,9 @@ class settings(QWidget):
         self.layout.addWidget(self.group_color, 0, 0, 1, -1)
         self.layout.addWidget(self.group_clockfont, 1, 0)
         self.layout.addWidget(self.group_datefont, 1, 1)
-        self.layout.addWidget(self.group_eventfont, 2, 0, 1, -1)
+        self.layout.addWidget(self.group_eventfont, 1, 2, 1, 1)
+        self.layout.addWidget(self.group_eventupdate, 2,0, 1, 2)
+        self.layout.addWidget(self.group_second, 2,2, 1, 1)
         
         
         self.show()
@@ -784,6 +795,12 @@ class settings(QWidget):
         value = self.__change_nums__(value)
         self.alpha_slider_value_label.setText(value)
         self.__update_alpha__()
+    
+    def get_alpha_sliderb(self):
+        value = 255.0 * (self.alpha_sliderb.value()+1) / 100 
+        value = self.__change_nums__(value)
+        self.alpha_sliderb_value_label.setText(value)
+        self.__update_alphab__()
         
     def __change_nums__(self, num):
         num_dicts = {'1':u'۱', '2':u'۲', '3':u'۳', '4':u'۴', '5':u'۵', '6':u'۶', '7':u'۷', '8':u'۸', '9':u'۹', '0':u'۰'}
@@ -798,15 +815,21 @@ class settings(QWidget):
     def __set_init_values__(self):
         #r, g, b, a = self.face.getpixel((500, 500))
         num = self.config["face_trans"]
+        numb = self.config["faceb_trans"]
         value = self.__change_nums__(num)
+        valueb = self.__change_nums__(numb)
         self.alpha_slider_value_label.setText(value)
+        self.alpha_sliderb_value_label.setText(valueb)
         a = int(100.0 * num/255 - 1)
+        ab = int(100.0 * numb/255 - 1)
         self.alpha_slider.setValue(a)
+        self.alpha_sliderb.setValue(ab)
         self.__update_alpha__()
+        self.__update_alphab__()
         self.clockfont_selector.setCurrentFont(QFont(self.config["clockfont"]))
         self.datefont_selector.setCurrentFont(QFont(self.config["datefont"]))
         self.eventfont_selector.setCurrentFont(QFont(self.config["eventfont"]))
-        
+    ### clock functions:
     def clock_currentFontChange(self):
         font = self.clockfont_selector.currentFont().family()
         self.config["clockfont"] = font
@@ -815,7 +838,16 @@ class settings(QWidget):
         size = self.clockfontsize_selector.value()
         if type(size) == type(1):
             self.config["clockfontsize"] = size
-    
+
+            
+    def pickclockcolor(self):
+        color = QColorDialog.getColor()
+        if color.name() != u'#000000':
+            self.clockcolor = [color.red(), color.green(), color.blue()]
+            self.config['clockcolor'] = self.clockcolor
+            self.clockcolorpicker.setStyleSheet(u"QPushButton {background-color: "+color.name()+u';color:red;}')
+
+    ### date functions:
     def date_currentFontChange(self):
         font = self.datefont_selector.currentFont().family()
         self.config["datefont"] = font
@@ -825,6 +857,13 @@ class settings(QWidget):
         if type(size) == type(1):
             self.config["datefontsize"] = size
             
+    def pickdatecolor(self):
+        color = QColorDialog.getColor()
+        if color.name() != u'#000000':
+            self.datecolor = [color.red(), color.green(), color.blue()]
+            self.config['datecolor'] = self.datecolor
+            self.datecolorpicker.setStyleSheet(u"QPushButton {background-color: "+color.name()+u';color:red;}')
+    ### event functions
     def event_currentFontChange(self):
         font = self.eventfont_selector.currentFont().family()
         self.config["eventfont"] = font
@@ -833,6 +872,104 @@ class settings(QWidget):
         size = self.eventfontsize_selector.value()
         if type(size) == type(1):
             self.config["eventfontsize"] = size
+    ### event updater functions:
+    def eventUpdater(self):
+        progbar = 0
+        self.update_events_progressbar.setTextVisible(True)
+        self.update_events_progressbar.setValue(progbar)
+        print ("I'm updataing myself by times.ir...")
+        year = self.persian_date.split(' ')[-1]
+        dic = {u'۰':'0', u'۱':'1', u'۲':'2', u'۳':'3', u'۴':'4', u'۵':'5', u'۶':'6', u'۷':'7', u'۸':'8', u'۹':'9'}
+        day = u'۰۱۲۳۴۵۶۷۸۹'
+        year = u''.join([dic.get(i) for i in year])
+        print ("year = ", year)
+        y = int(year)
+        K = 30 if y % 4 == 1 else 29
+        m = [31] * 6 + [30] * 5 + [K]
+        month_dict = {1:u'فروردین',
+                      2:u'اردیبهشت',
+                      3:u'خرداد',
+                      4:u'تیر',
+                      5:u'مرداد',
+                      6:u'شهریور',
+                      7:u'مهر',
+                      8:u'آبان',
+                      9:u'آذر',
+                      10:u'دی',
+                      11:u'بهمن',
+                      12:u'اسفند',
+            }
+        EV = open('events.json', 'w')
+        HD = open('holidays.json', 'w')
+        EV.writelines('{\n')
+        HD.writelines('{\n')
+        for i in range(1, 13):
+            for j in range(1, m[i-1]+1):
+                url = 'http://www.time.ir/fa/event/list/0/'+year+'/'+str(i)+'/'+ str(j)
+                page = requests.get(url)
+                holiday = 0 if page.content.find(b'eventHoliday') == -1 else 1
+                tree = html.fromstring(page.content)
+                tt = tree.xpath('//li/text()')
+                if len(tt) == 0:
+                    pass
+                else:
+                    a = [tt[k] for k in range(len(tt)) if k % 3 == 1]
+                    b = [c.split('\r\n')[1] for c in a]
+                for c in range(len(b)):
+                    for k in range(len(b[c])):
+                        if  b[c][k] != u' ' or b[c][k] != ' ':
+                            break
+                            print("I break it")
+                    b[c] = b[c][k::]
+                text = ''
+                for t in b:
+                    text = text + t + '-'
+                    d = u''.join([day[int(l)] for l in str(j)])
+                holitext = u' (تعطیل)' if holiday == 1 else u''
+                line = u'"' + d + u' ' + month_dict[i]+u'": '+ u'"'+text+holitext+'",\n'
+                if holiday == 1:
+                    #L = u'"' + u' ' + month_dict[i]+u'": '+ u'"'+d+'",\n'
+                    L = u'"'+ d + u' ' + month_dict[i]+u'": '+ u'"'+d+'",\n'
+                    if sys.version[0] == '2':
+                        L = L.encode('utf-8')
+                    HD.writelines(L)
+                    self.holidays[d + u' ' + month_dict[i]] = d
+                               
+                    if sys.version[0] == '2':
+                        line = line.encode('utf-8')
+                    EV.writelines(line)
+                    self.events[d + u' ' + month_dict[i]] = text+holitext
+                print (text)
+                progbar += 1
+                self.update_events_progressbar.setValue(int(progbar*95/366))
+                time.sleep(0.5)
+        if j == K and i == 12: # means to get all year events
+            EV.writelines('"پایان":"پایان"')
+            self.events[u"پایان"] = u"پایان"
+            EV.writelines("}")
+            EV.close()
+            HD.writelines('"پایان":"پایان"')
+            self.holidays[u"پایان"] = u"پایان"
+            HD.writelines("}")
+            HD.close()
+            self.update_events_progressbar.setValue(100)
+            print("I saved events file")
+            self.update_events_progressbar.setValue(0)
+            self.update_events_progressbar.setTextVisible(False)
+    ### second color functions:
+    def picksecondscolor(self):
+        color = QColorDialog.getColor()
+        if color.name() != u'#000000':
+            self.seconds_color = [color.red(), color.green(), color.blue()]
+            self.config['seconds_color'] = self.seconds_color
+            self.secondscolorpicker.setStyleSheet(u"QPushButton {background-color: "+color.name()+u';color:red;}')
+    
+    def picksecondcolor(self):
+        color = QColorDialog.getColor()
+        if color.name() != u'#000000':
+            self.second_color = [color.red(), color.green(), color.blue()]
+            self.config['second_color'] = self.second_color
+            self.secondcolorpicker.setStyleSheet(u"QPushButton {background-color: "+color.name()+u';color:red;}')
     
     def __update_alpha__(self):
         va = self.alpha_slider.value()
@@ -843,9 +980,19 @@ class settings(QWidget):
         K.putdata(p)
         self.face.putalpha(K)
         self.config["face_trans"] = va
+        
+    def __update_alphab__(self):
+        va = self.alpha_sliderb.value()
+        va = int(255.0 * (va+1) / 100)
+        K = self.facebmask.copy()
+        d = K.getdata()
+        p = [int(i*va/255) for i in d]
+        K.putdata(p)
+        self.faceb.putalpha(K)
+        self.config["faceb_trans"] = va
     
-    def __open__(self):
-        pass
+    def __open__(self, pd):
+        self.persian_date = pd
     
     def closeEvent(self, event):
         self.hide()
