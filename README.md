@@ -32,7 +32,7 @@
 
 <p dir=rtl>
 پیشنهاد می‌کنم اگر می‌خواهید پایتون را بر روی ویندوز نصب کنید، بجای آن از مجموعه 
-[Anaconda](https://www.anaconda.com/download)
+(Anaconda)[https://www.anaconda.com/download]
 استفاده کنید. اما با توجه به این که حجم این بسته زیاد است می‌توانید از جایگزین
 ساده‌ی آن یعنی
 [miniconda](https://conda.io/miniconda.html)  استفاده کنید.
@@ -48,6 +48,7 @@
 <p dir=rtl>
 برای این که بتوانید برنامه ساعت را در هنگام راه‌اندازی ویندوز اجرا نمایید باید اول درون پوشه ساعت یک فایل با پسوند clock.bat و با محتوی  ایجاد کنید:
 </p>
+
 > python -u circleclock.py
 
 <p dir=rtl>
