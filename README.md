@@ -32,16 +32,10 @@
 
 <p dir=rtl align=right> 
 پیشنهاد می‌کنم اگر می‌خواهید پایتون را بر روی ویندوز نصب کنید، بجای آن از مجموعه
-<a href="url">link text</a>
-</p> 
-
-
-
-[Anaconda](https://www.anaconda.com/download)
-
+<a href="https://www.anaconda.com/download">Anaconda</a>
 استفاده کنید. اما با توجه به این که حجم این بسته زیاد است می‌توانید از جایگزین
 ساده‌ی آن یعنی
-[miniconda](https://conda.io/miniconda.html)  استفاده کنید.
+<a href="https://conda.io/miniconda.html">miniconda</a>  استفاده کنید.
 حتما توجه کنید که هنگام نصب گزینه‌های اضافه کردن به مسیرهای سیستم و نیز جایگزینی به عنوان پایتون پیشفرض انتخاب شوند. 
 پس از نصب کوندا برروی سیستم می‌تواند با استفاده از دستورات زیر پیشنیازهای برنامه را نصب کنید.
 </p>
