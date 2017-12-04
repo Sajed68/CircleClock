@@ -48,8 +48,7 @@ class ui_widget(QMainWindow):
     def __init__(self):
         super(ui_widget, self).__init__()
         self.setWindowTitle('CircleClock')
-        # following line is a setting to remove icon at taskbar, BUT IT MUST BE QMainWindow:
-        self.setWindowFlags(QtCore.Qt.Tool| QtCore.Qt.FramelessWindowHint) # To remove Title bar
+        
         self.__read_config__()
         QToolTip.setFont(QFont(self.eventfont, self.eventfontsize))
         self.setAttribute(Qt.WA_NoSystemBackground, True)
@@ -73,7 +72,8 @@ class ui_widget(QMainWindow):
         self.settings = settings(self.face, self.faceb, self.config, self.events, self.holidays)
         self.settings.hide()
         self.__update__()
-
+        # following line is a setting to remove icon at taskbar, BUT IT MUST BE QMainWindow:
+        self.setWindowFlags(QtCore.Qt.Tool | QtCore.Qt.FramelessWindowHint) # To remove Title bar
         # now need to call shower method!
         self.show()
         self.raise_()
@@ -1052,10 +1052,10 @@ class settings(QWidget):
                     HD.writelines(L)
                     self.holidays[d + u' ' + month_dict[i]] = d
                                
-                    if sys.version[0] == '2':
-                        line = line.encode('utf-8')
-                    EV.writelines(line)
-                    self.events[d + u' ' + month_dict[i]] = text+holitext
+                if sys.version[0] == '2':
+                    line = line.encode('utf-8')
+                EV.writelines(line)
+                self.events[d + u' ' + month_dict[i]] = text+holitext
                 print (text)
                 progbar += 1
                 self.update_events_progressbar.setValue(int(progbar*95/366))
